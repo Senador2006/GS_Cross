@@ -46,3 +46,7 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Pacotes de exportação gerados localmente
+*.bundle
+radar_territorial.zip
