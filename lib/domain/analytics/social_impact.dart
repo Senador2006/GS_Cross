@@ -20,6 +20,7 @@ class SocialImpactReport {
     required this.citizenReportsSynced,
     required this.meanModelAccuracy,
     required this.highConfidenceShare,
+    required this.population,
   });
 
   /// Pessoas que vivem em áreas cobertas por alertas tratados por gestores.
@@ -44,7 +45,10 @@ class SocialImpactReport {
   /// Fração de alertas ativos com confiança alta.
   final double highConfidenceShare;
 
-  double get coverageRatio => peopleCovered / Territory.population;
+  /// População usada como teto (IBGE, ou o valor de referência do território).
+  final int population;
+
+  double get coverageRatio => population == 0 ? 0 : peopleCovered / population;
 }
 
 class SocialImpactCalculator {
@@ -59,7 +63,9 @@ class SocialImpactCalculator {
     required Map<String, AlertDecision> decisions,
     required Map<String, IndicatorAnalysis> analyses,
     required List<Occurrence> occurrences,
+    int? population,
   }) {
+    final residents = population ?? Territory.population;
     final alertsById = {for (final a in alerts) a.id: a};
     final relevant = decisions.values
         .where((d) => d.status != DecisionStatus.pending)
@@ -82,7 +88,7 @@ class SocialImpactCalculator {
     }
     final people = min(
       popByIndicator.values.fold<int>(0, (s, p) => s + p),
-      Territory.population,
+      residents,
     );
 
     // Água: excedente diário acima da média × 7 dias × parcela evitável.
@@ -128,6 +134,7 @@ class SocialImpactCalculator {
           ? 0
           : alerts.where((a) => a.confidence == ConfidenceLevel.high).length /
                 alerts.length,
+      population: residents,
     );
   }
 }

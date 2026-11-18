@@ -1,27 +1,31 @@
+import '../../core/constants/territory.dart';
 import '../models/indicator.dart';
 import '../models/territory_snapshot.dart';
 import '../services/api_exception.dart';
-import '../services/climate_api_service.dart';
+import '../services/ibge_api_service.dart';
+import '../services/inmet_scraper_service.dart';
 import '../services/local_storage_service.dart';
 import '../services/simulated_territory_api.dart';
 
 /// Orquestra as fontes de dados do território e o cache offline.
 ///
 /// Estratégia *network-first com fallback para cache*:
-/// 1. tenta buscar dados novos (API simulada + Open-Meteo);
+/// 1. tenta buscar dados novos (API simulada + página do INMET + IBGE);
 /// 2. se der certo, salva o snapshot localmente;
 /// 3. se a rede falhar, devolve o último snapshot salvo, marcado como cache;
 /// 4. sem cache disponível, propaga o erro para a UI exibir o estado de erro.
 class TerritoryRepository {
   TerritoryRepository({
     required this._territoryApi,
-    required this._climateApi,
+    required this._inmet,
+    required this._ibge,
     required this._storage,
     DateTime Function()? clock,
   }) : _clock = clock ?? DateTime.now;
 
   final SimulatedTerritoryApi _territoryApi;
-  final ClimateApiService _climateApi;
+  final InmetScraperService _inmet;
+  final IbgeApiService _ibge;
   final LocalStorageService _storage;
   final DateTime Function() _clock;
 
@@ -51,28 +55,58 @@ class TerritoryRepository {
   }
 
   Future<TerritorySnapshot> _fetchRemote({required bool offline}) async {
-    final warnings = <String>[];
-    final indicatorsFuture = _territoryApi.fetchIndicators(offline: offline);
-
-    List<IndicatorSeries> climate;
     if (offline) {
       // Mantém o comportamento coerente: sem rede, nenhuma fonte responde.
-      await indicatorsFuture; // lança ApiException
-      climate = const [];
-    } else {
-      try {
-        climate = await _climateApi.fetchClimate();
-      } on ApiException catch (e) {
-        climate = _territoryApi.syntheticClimate();
-        warnings.add('${e.message} Clima exibido com dados sintéticos.');
-      }
+      await _territoryApi.fetchIndicators(offline: true);
     }
 
-    final indicators = await indicatorsFuture;
+    final warnings = <String>[];
+    final notes = <String>[];
+    // O erro é capturado na hora. Sem isso, uma fonte que falha enquanto a
+    // outra ainda responde vaza como exceção não tratada.
+    final indicatorsFuture = _capture(_territoryApi.fetchIndicators());
+    final climateFuture = _capture(_inmet.fetchClimate());
+    final censusFuture = _capture(_ibge.fetchDistrict());
+
+    final indicatorsValue = await indicatorsFuture;
+    if (indicatorsValue is ApiException) throw indicatorsValue;
+    if (indicatorsValue is! List<IndicatorSeries>) throw indicatorsValue;
+
+    List<IndicatorSeries> climate;
+    final climateValue = await climateFuture;
+    if (climateValue is InmetClimate) {
+      climate = climateValue.series;
+      notes.add(climateValue.note);
+    } else if (climateValue is ApiException) {
+      climate = _territoryApi.syntheticClimate();
+      warnings.add('${climateValue.message} Clima exibido com dados sintéticos.');
+    } else {
+      throw climateValue;
+    }
+
+    var population = Territory.population;
+    final censusValue = await censusFuture;
+    if (censusValue is DistrictCensus) {
+      population = censusValue.population;
+      notes.add(censusValue.note);
+    } else if (censusValue is ApiException) {
+      warnings.add(
+        '${censusValue.message} População do distrito mantida no valor de referência.',
+      );
+    } else {
+      throw censusValue;
+    }
+
     return TerritorySnapshot(
-      series: [...indicators, ...climate],
+      series: [...indicatorsValue, ...climate],
       fetchedAt: _clock(),
       warnings: warnings,
+      notes: notes,
+      population: population,
     );
   }
 }
+
+Future<Object> _capture(Future<Object> future) => future.onError<Object>(
+  (error, _) => error,
+);

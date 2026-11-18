@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../core/constants/territory.dart';
 import '../data/models/alert.dart';
 import '../data/models/threshold.dart';
 import '../data/repositories/decision_repository.dart';
@@ -87,6 +88,8 @@ class AlertsProvider extends ChangeNotifier {
         thresholds: thresholds,
         occurrences: _occurrences?.items ?? const [],
         now: territory.snapshot!.fetchedAt,
+        districtPopulation:
+            territory.snapshot?.population ?? Territory.population,
       );
       _status = _alerts.isEmpty ? ViewStatus.empty : ViewStatus.success;
       _computeImpact();
@@ -105,6 +108,7 @@ class AlertsProvider extends ChangeNotifier {
       decisions: _decisions,
       analyses: territory.analyses,
       occurrences: _occurrences?.items ?? const [],
+      population: territory.snapshot?.population,
     );
   }
 

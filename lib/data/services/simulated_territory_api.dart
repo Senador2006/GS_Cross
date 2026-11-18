@@ -123,7 +123,7 @@ class SimulatedTerritoryApi {
       noise: 0.09,
       missingRate: 0.05,
     ),
-    // Usados apenas como fallback quando a Open-Meteo está indisponível.
+    // Usados apenas como fallback quando a página do INMET está indisponível.
     'temp_max': _Profile(
       base: 28.5,
       noise: 0.06,

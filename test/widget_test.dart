@@ -4,7 +4,8 @@ import 'package:http/testing.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:radar_territorial/app.dart';
-import 'package:radar_territorial/data/services/climate_api_service.dart';
+import 'package:radar_territorial/data/services/ibge_api_service.dart';
+import 'package:radar_territorial/data/services/inmet_scraper_service.dart';
 import 'package:radar_territorial/data/services/local_storage_service.dart';
 import 'package:radar_territorial/data/services/simulated_territory_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,7 +16,10 @@ Future<Widget> _app({Map<String, Object> prefs = const {}}) async {
   return RadarTerritorialApp(
     storage: storage,
     territoryApi: SimulatedTerritoryApi(latency: Duration.zero),
-    climateApi: ClimateApiService(
+    inmet: InmetScraperService(
+      client: MockClient((_) async => http.Response('erro', 503)),
+    ),
+    ibge: IbgeApiService(
       client: MockClient((_) async => http.Response('erro', 503)),
     ),
   );

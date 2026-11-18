@@ -2,9 +2,9 @@ import '../../data/models/indicator.dart';
 
 /// Território monitorado pelo app.
 ///
-/// Os dados de clima vêm da API pública Open-Meteo para estas coordenadas.
-/// Os demais indicadores são **sintéticos** (gerados de forma determinística
-/// pelo serviço simulado), pois não há API pública diária e aberta para eles.
+/// O clima vem da estação automática do INMET mais próxima (A701, Mirante
+/// de Santana): Itaquera não tem estação própria. A população do distrito
+/// vem da API do IBGE. Os demais indicadores são **sintéticos**.
 class Territory {
   Territory._();
 
@@ -12,6 +12,8 @@ class Territory {
   static const fullName = 'Distrito de Itaquera — Zona Leste, São Paulo/SP';
   static const latitude = -23.5367;
   static const longitude = -46.4558;
+  /// Censo 2010 (IBGE, distrito 355030837). A API substitui este valor
+  /// quando responde; ele permanece como fallback offline.
   static const population = 204871;
   static const timezone = 'America/Sao_Paulo';
 

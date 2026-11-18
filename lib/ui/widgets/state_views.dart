@@ -145,6 +145,7 @@ class DataStatusBanner extends StatelessWidget {
         'Modo offline: exibindo dados salvos em ${Fmt.dateTime(snap.fetchedAt)}.'
       else
         'Atualizado em ${Fmt.dateTime(snap.fetchedAt)}.',
+      ...snap.notes,
       ...snap.warnings,
     ];
     final highlight = offline || snap.warnings.isNotEmpty;

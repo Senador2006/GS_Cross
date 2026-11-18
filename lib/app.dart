@@ -8,7 +8,8 @@ import 'data/repositories/decision_repository.dart';
 import 'data/repositories/occurrence_repository.dart';
 import 'data/repositories/settings_repository.dart';
 import 'data/repositories/territory_repository.dart';
-import 'data/services/climate_api_service.dart';
+import 'data/services/ibge_api_service.dart';
+import 'data/services/inmet_scraper_service.dart';
 import 'data/services/local_storage_service.dart';
 import 'data/services/simulated_territory_api.dart';
 import 'state/alerts_provider.dart';
@@ -22,14 +23,16 @@ class RadarTerritorialApp extends StatelessWidget {
     super.key,
     required this.storage,
     this.territoryApi,
-    this.climateApi,
+    this.inmet,
+    this.ibge,
   });
 
   final LocalStorageService storage;
 
   /// Injetáveis para testes.
   final SimulatedTerritoryApi? territoryApi;
-  final ClimateApiService? climateApi;
+  final InmetScraperService? inmet;
+  final IbgeApiService? ibge;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +46,8 @@ class RadarTerritorialApp extends StatelessWidget {
           create: (_) => TerritoryProvider(
             TerritoryRepository(
               territoryApi: api,
-              climateApi: climateApi ?? ClimateApiService(),
+              inmet: inmet ?? InmetScraperService(),
+              ibge: ibge ?? IbgeApiService(),
               storage: storage,
             ),
           ),

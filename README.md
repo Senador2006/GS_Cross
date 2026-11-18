@@ -81,7 +81,7 @@ flutter analyze
 flutter test
 ```
 
-Não há chaves de API: a Open-Meteo é gratuita e aberta. Se ela estiver inacessível, o app usa clima sintético e avisa isso na tela.
+Não há chaves de API. O clima é lido da página pública de dados históricos do INMET (estação A701, a mais próxima de Itaquera) e a população do distrito vem da API do IBGE. Se uma delas estiver inacessível, o app avisa e segue com o fallback.
 
 ## 4. Arquitetura e estrutura de pastas
 
@@ -104,7 +104,7 @@ lib/
 │   └── utils/                    # formatadores pt-BR, validadores, privacidade
 ├── data/
 │   ├── models/                   # entidades imutáveis com toJson/fromJson
-│   ├── services/                 # Open-Meteo (HTTP), API simulada, storage local
+│   ├── services/                 # INMET (scraping), IBGE, API simulada, storage local
 │   └── repositories/             # orquestram fontes + cache (offline-first)
 ├── domain/analytics/             # estatística, previsão, alertas, impacto social (Dart puro)
 ├── state/                        # ChangeNotifiers globais + ViewStatus
@@ -145,7 +145,8 @@ A home usa `NavigationBar` em celulares e `NavigationRail` em telas ≥ 840 px.
 |---|---|
 | `material_ui` | Biblioteca Material oficial, desacoplada do SDK a partir do Flutter 3.50. |
 | `provider` | Padrão recomendado pela equipe Flutter, pouco código cerimonial e suporte nativo a estado derivado (`ProxyProvider`) — exatamente o caso dos alertas. Riverpod/BLoC trariam mais complexidade sem ganho para este escopo. |
-| `http` | Cliente HTTP simples e testável (`MockClient`) para a Open-Meteo. |
+| `http` | Cliente HTTP simples e testável (`MockClient`) para o INMET e o IBGE. |
+| `archive` | Lê só a estação A701 dentro do ZIP publicado na página do INMET, sem baixar o arquivo inteiro. |
 | `shared_preferences` | Persistência que funciona igual em Android, iOS e Web sem código nativo. O volume (cache de 13 séries × 60 dias, ocorrências, decisões) é pequeno. Isolado em `LocalStorageService`: trocar por Hive/SQLite exige mudar uma classe. |
 | `fl_chart` | Gráficos de linha/barras customizáveis, com faixa entre linhas (intervalo de confiança), linhas de limiar e tooltips. |
 | `intl` | Datas e números no padrão brasileiro. |
@@ -163,7 +164,8 @@ Outras decisões:
 
 | Domínio | Indicadores | Fonte |
 |---|---|---|
-| Clima | Temperatura máxima, precipitação, umidade mínima | **Open-Meteo (real)**, 60 dias de histórico para as coordenadas de Itaquera. Licença CC BY 4.0. |
+| Clima | Temperatura máxima, precipitação, umidade mínima | **INMET (real)**, estação automática A701 (São Paulo - Mirante de Santana), a mais próxima de Itaquera. A página de dados históricos é lida em HTML e só o CSV dessa estação é extraído do ZIP do ano. |
+| Território | População do distrito | **IBGE (real)**, localidade 355030837 e Censo Demográfico 2010 (agregado 1378). O Censo 2022 ainda não publica esse recorte de distrito na API. |
 | Recursos | Consumo de água, perdas na rede, consumo de energia, interrupções | **Sintético** |
 | Resíduos | Resíduos coletados, descarte irregular, taxa de reciclagem | **Sintético** |
 | Serviços | Atendimentos nas UBS, tempo de espera, solicitações 156 | **Sintético** |
@@ -183,7 +185,7 @@ Os dados sintéticos vêm de `SimulatedTerritoryApi`, que representa o backend d
 
 **Quando a previsão NÃO é confiável** (exibido no app): menos de 14 dias válidos; mais de 15% de dados faltantes; WAPE acima de 25%; valor atual a mais de 3 desvios-padrão (mudança de regime). Alertas preditivos com confiança baixa são **rebaixados para "informativo"**, para não mobilizar equipes à toa.
 
-**Vieses e limitações declarados:** dados sintéticos para 10 dos 13 indicadores; médias do distrito escondem desigualdades entre bairros; relatos cidadãos sub-representam quem não tem smartphone; a grade da Open-Meteo (~11 km) não capta microclimas; o modelo não conhece feriados, obras ou intervenções; correlação não é causalidade; limiares padrão precisam ser calibrados com as equipes técnicas.
+**Vieses e limitações declarados:** dados sintéticos para 10 dos 13 indicadores; médias do distrito escondem desigualdades entre bairros; relatos cidadãos sub-representam quem não tem smartphone; a estação do INMET fica no Mirante de Santana, não em Itaquera, e o arquivo público não é do dia corrente; o modelo não conhece feriados, obras ou intervenções; correlação não é causalidade; limiares padrão precisam ser calibrados com as equipes técnicas.
 
 **Sem decisões automáticas:** o motor só **sugere** ações. O app não envia ordens, não aciona equipes e não altera nada fora dele. Toda mudança de status de um alerta exige uma pessoa com perfil gestor, uma justificativa escrita e uma confirmação.
 
@@ -215,7 +217,7 @@ Os dados sintéticos vêm de `SimulatedTerritoryApi`, que representa o backend d
 | 2 | Dashboards territoriais | `ui/screens/dashboard/` — 4 dashboards com KPIs, sparklines, gráfico de previsão e barras semanais |
 | 3 | Alertas e transparência | `domain/analytics/alert_engine.dart`, `ui/screens/alerts/*`, `settings/transparency_screen.dart` |
 | 4 | Gerenciamento de estado | `state/*` (global) e estados locais nas telas; `ViewStatus` para carregando/erro/vazio |
-| 5 | Integração e persistência | `data/services/climate_api_service.dart` (Open-Meteo), `simulated_territory_api.dart`, `local_storage_service.dart`, cache offline no `territory_repository.dart` |
+| 5 | Integração e persistência | `data/services/inmet_scraper_service.dart`, `ibge_api_service.dart`, `simulated_territory_api.dart`, `local_storage_service.dart`, cache offline no `territory_repository.dart` |
 | 6 | Formulários com validação | `occurrence_form_screen.dart`, `thresholds_screen.dart`, decisão em `alert_detail_screen.dart`; regras em `core/utils/validators.dart` |
 | 7 | Identidade visual e UX | `core/theme/*`, `ui/widgets/*`; layout adaptável (NavigationRail, largura máxima) |
 | 8 | Acessibilidade, privacidade e impacto | `app.dart` (escala de texto), `privacy_screen.dart`, `consent_screen.dart`, `core/utils/privacy.dart`, `social_impact_screen.dart` |
@@ -227,7 +229,7 @@ Os dados sintéticos vêm de `SimulatedTerritoryApi`, que representa o backend d
 
 - `analytics_test.dart` — estatística, previsão (tendência, intervalos, dados faltantes), regras de alerta (direção do indicador, relatos cidadãos) e impacto social;
 - `validators_test.dart` — validações dos formulários, bloqueio de dados pessoais, pseudonimização;
-- `repository_test.dart` — parse da Open-Meteo, fallback para clima sintético, cache offline, determinismo da API simulada;
+- `repository_test.dart` — leitura da página do INMET, população do IBGE, fallback para clima sintético, cache offline, determinismo da API simulada;
 - `widget_test.dart` — consentimento obrigatório, navegação até um dashboard e erros de validação no formulário.
 
 ## 11. Telas
@@ -240,4 +242,4 @@ Os dados sintéticos vêm de `SimulatedTerritoryApi`, que representa o backend d
 |---|---|---|---|
 | ![](docs/screenshots/05_alerta.png) | ![](docs/screenshots/06_decisao.png) | ![](docs/screenshots/07_formulario.png) | ![](docs/screenshots/08_dark_clima.png) |
 
-> As capturas foram geradas na versão web sem acesso à Open-Meteo, por isso o aviso "Clima exibido com dados sintéticos". Com internet, o clima usa dados reais.
+> As capturas foram geradas na versão web sem acesso ao INMET, por isso o aviso "Clima exibido com dados sintéticos". Com internet, o clima usa a estação do INMET.

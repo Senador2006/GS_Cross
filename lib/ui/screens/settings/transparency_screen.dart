@@ -94,7 +94,8 @@ class TransparencyScreen extends StatelessWidget {
                 iconSize: 18,
                 items: [
                   'Indicadores de recursos, resíduos e serviços são SINTÉTICOS '
-                      '(cenário simulado). Clima vem da Open-Meteo (real).',
+                      '(cenário simulado). Clima vem da estação do INMET '
+                      'mais próxima. População do distrito vem do IBGE.',
                   'Dados agregados do distrito escondem desigualdades entre '
                       'bairros — um bairro pode estar em crise com a média normal.',
                   'Relatos cidadãos sub-representam quem não tem smartphone, '

@@ -9,6 +9,8 @@ class TerritorySnapshot {
     required this.fetchedAt,
     this.fromCache = false,
     this.warnings = const [],
+    this.notes = const [],
+    this.population = Territory.population,
   });
 
   final List<IndicatorSeries> series;
@@ -19,6 +21,12 @@ class TerritorySnapshot {
 
   /// Avisos de qualidade da coleta (ex.: fonte pública indisponível).
   final List<String> warnings;
+
+  /// Origem dos dados públicos que responderam (INMET, IBGE).
+  final List<String> notes;
+
+  /// População do distrito. Vem do IBGE; [Territory.population] é o fallback.
+  final int population;
 
   bool get isEmpty => series.isEmpty;
 
@@ -34,11 +42,15 @@ class TerritorySnapshot {
     fetchedAt: fetchedAt,
     fromCache: true,
     warnings: warnings,
+    notes: notes,
+    population: population,
   );
 
   Map<String, dynamic> toJson() => {
     'fetchedAt': fetchedAt.toIso8601String(),
     'warnings': warnings,
+    'notes': notes,
+    'population': population,
     'series': series.map((s) => s.toJson()).toList(),
   };
 
@@ -63,6 +75,8 @@ class TerritorySnapshot {
       series: series,
       fetchedAt: DateTime.parse(json['fetchedAt'] as String),
       warnings: (json['warnings'] as List? ?? []).cast<String>(),
+      notes: (json['notes'] as List? ?? []).cast<String>(),
+      population: (json['population'] as num?)?.toInt() ?? Territory.population,
     );
   }
 }

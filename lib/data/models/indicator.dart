@@ -27,7 +27,7 @@ enum WorseDirection {
 
 /// Origem do dado — exibida na UI para transparência.
 enum DataOrigin {
-  publicApi('API pública (Open-Meteo)'),
+  publicApi('INMET · estação A701 (Mirante de Santana)'),
   synthetic('Dados sintéticos simulados');
 
   const DataOrigin(this.label);

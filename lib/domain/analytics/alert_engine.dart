@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import '../../core/constants/territory.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/alert.dart';
 import '../../data/models/analysis.dart';
@@ -29,7 +30,9 @@ class AlertEngine {
     required Map<String, AlertThreshold> thresholds,
     required List<Occurrence> occurrences,
     required DateTime now,
+    int? districtPopulation,
   }) {
+    final population = districtPopulation ?? Territory.population;
     final alerts = <TerritoryAlert>[];
     for (final s in series) {
       final analysis = analyses[s.id];
@@ -37,7 +40,7 @@ class AlertEngine {
       if (analysis == null || threshold == null || !threshold.enabled) {
         continue;
       }
-      final alert = _indicatorAlert(s, analysis, threshold, now);
+      final alert = _indicatorAlert(s, analysis, threshold, now, population);
       if (alert != null) alerts.add(alert);
     }
     alerts.addAll(_citizenAlerts(occurrences, now));
@@ -56,7 +59,12 @@ class AlertEngine {
     IndicatorAnalysis a,
     AlertThreshold t,
     DateTime now,
+    int districtPopulation,
   ) {
+    int people(IndicatorDefinition def) =>
+        def.affectedPopulation == Territory.population
+        ? districtPopulation
+        : def.affectedPopulation;
     final def = s.definition;
     final last = s.lastValid;
     if (last == null || a.current == null) return null;
@@ -106,7 +114,7 @@ class AlertEngine {
         limitations: baseLimitations,
         suggestedActions: _actions(def.id),
         generatedAt: now,
-        affectedPopulation: def.affectedPopulation,
+        affectedPopulation: people(def),
       );
     }
 
@@ -158,7 +166,7 @@ class AlertEngine {
         ],
         suggestedActions: _actions(def.id),
         generatedAt: now,
-        affectedPopulation: def.affectedPopulation,
+        affectedPopulation: people(def),
         expectedDate: f.date,
       );
     }
@@ -198,7 +206,7 @@ class AlertEngine {
           ..._actions(def.id),
         ],
         generatedAt: now,
-        affectedPopulation: def.affectedPopulation,
+        affectedPopulation: people(def),
       );
     }
 
@@ -230,7 +238,7 @@ class AlertEngine {
         limitations: baseLimitations,
         suggestedActions: _actions(def.id),
         generatedAt: now,
-        affectedPopulation: def.affectedPopulation,
+        affectedPopulation: people(def),
       );
     }
     return null;
@@ -293,8 +301,8 @@ class AlertEngine {
       'Dados sintéticos: cenário simulado para demonstração, não são '
           'medições reais.'
     else
-      'Dados de modelo meteorológico (Open-Meteo, grade de ~11 km): '
-          'podem não captar microclimas do bairro.',
+      'Medição da estação A701 (São Paulo - Mirante de Santana), '
+          'a mais próxima de Itaquera: o distrito não tem estação do INMET.',
     'Modelo estatístico simples (tendência linear + padrão semanal, '
         '28 dias): não considera feriados, obras ou intervenções.',
     'Indicador agregado do distrito: pode esconder desigualdades '
