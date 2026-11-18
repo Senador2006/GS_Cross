@@ -8,9 +8,9 @@
 
 | Nome | RM |
 |------|----|
-| _preencher_ | _preencher_ |
-| _preencher_ | _preencher_ |
-| _preencher_ | _preencher_ |
+| Thiago Ono Sakai | 563448 |
+| Lukas Eiki | 561607 |
+| Pedro Mitsuo | 561710 |
 
 ## Sumário
 
