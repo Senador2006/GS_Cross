@@ -50,3 +50,11 @@ app.*.map.json
 # Pacotes de exportação gerados localmente
 *.bundle
 radar_territorial.zip
+
+# Credenciais e ambiente local (nunca versionar)
+.env
+.env.*
+!.env.example
+*.pem
+*credentials*.json
+*service-account*.json

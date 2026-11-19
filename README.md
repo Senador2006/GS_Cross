@@ -112,7 +112,7 @@ lib/
     ├── widgets/                  # componentes reutilizáveis da identidade visual
     └── screens/                  # onboarding, home, overview, dashboard, indicator,
                                   # alerts, occurrences, settings
-test/                             # 33 testes: analytics, validadores, repositório, widgets
+test/                             # 36 testes: analytics, validadores, repositório, widgets
 ```
 
 ### Navegação
@@ -225,7 +225,7 @@ Os dados sintéticos vêm de `SimulatedTerritoryApi`, que representa o backend d
 
 ## 10. Testes
 
-`flutter test` executa 33 testes:
+`flutter test` executa 36 testes:
 
 - `analytics_test.dart` — estatística, previsão (tendência, intervalos, dados faltantes), regras de alerta (direção do indicador, relatos cidadãos) e impacto social;
 - `validators_test.dart` — validações dos formulários, bloqueio de dados pessoais, pseudonimização;
