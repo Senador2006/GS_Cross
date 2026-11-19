@@ -82,7 +82,12 @@ class ThresholdsScreen extends StatelessWidget {
                   child: AppCard(
                     padding: EdgeInsets.zero,
                     child: ExpansionTile(
-                      key: PageStorageKey(def.id),
+                      // ValueKey, e não PageStorageKey: o tile grava um bool
+                      // (aberto/fechado) no PageStorage, e o TextField do
+                      // formulário lê esse mesmo registro como offset de
+                      // rolagem. No web isso quebra com
+                      // "bool is not a subtype of double?".
+                      key: ValueKey(def.id),
                       initiallyExpanded: def.id == focusIndicatorId,
                       leading: Icon(
                         SemanticStyle.domainIcon(domain),

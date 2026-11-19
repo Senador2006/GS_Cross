@@ -81,7 +81,7 @@ flutter analyze
 flutter test
 ```
 
-Não há chaves de API. O clima é lido da página pública de dados históricos do INMET (estação A701, a mais próxima de Itaquera) e a população do distrito vem da API do IBGE. Se uma delas estiver inacessível, o app avisa e segue com o fallback.
+Não há chaves de API. O clima usa o CSV da estação A701 guardado em `lib/data/2026` (a mais próxima de Itaquera; o distrito não tem estação própria) e, se esse arquivo faltar, a página pública do INMET. A população do distrito vem da API do IBGE. Se uma fonte falhar, o app avisa e segue com o fallback.
 
 ## 4. Arquitetura e estrutura de pastas
 
@@ -112,7 +112,7 @@ lib/
     ├── widgets/                  # componentes reutilizáveis da identidade visual
     └── screens/                  # onboarding, home, overview, dashboard, indicator,
                                   # alerts, occurrences, settings
-test/                             # 36 testes: analytics, validadores, repositório, widgets
+test/                             # 37 testes: analytics, validadores, repositório, widgets
 ```
 
 ### Navegação
@@ -164,7 +164,7 @@ Outras decisões:
 
 | Domínio | Indicadores | Fonte |
 |---|---|---|
-| Clima | Temperatura máxima, precipitação, umidade mínima | **INMET (real)**, estação automática A701 (São Paulo - Mirante de Santana), a mais próxima de Itaquera. A página de dados históricos é lida em HTML e só o CSV dessa estação é extraído do ZIP do ano. |
+| Clima | Temperatura máxima, precipitação, umidade mínima | **INMET (real)**, só a estação A701 (São Paulo - Mirante de Santana), a mais próxima de Itaquera. O CSV está em `lib/data/2026`; o restante do pacote nacional foi descartado. |
 | Território | População do distrito | **IBGE (real)**, localidade 355030837 e Censo Demográfico 2010 (agregado 1378). O Censo 2022 ainda não publica esse recorte de distrito na API. |
 | Recursos | Consumo de água, perdas na rede, consumo de energia, interrupções | **Sintético** |
 | Resíduos | Resíduos coletados, descarte irregular, taxa de reciclagem | **Sintético** |
@@ -225,12 +225,12 @@ Os dados sintéticos vêm de `SimulatedTerritoryApi`, que representa o backend d
 
 ## 10. Testes
 
-`flutter test` executa 36 testes:
+`flutter test` executa 37 testes:
 
 - `analytics_test.dart` — estatística, previsão (tendência, intervalos, dados faltantes), regras de alerta (direção do indicador, relatos cidadãos) e impacto social;
 - `validators_test.dart` — validações dos formulários, bloqueio de dados pessoais, pseudonimização;
 - `repository_test.dart` — leitura da página do INMET, população do IBGE, fallback para clima sintético, cache offline, determinismo da API simulada;
-- `widget_test.dart` — consentimento obrigatório, navegação até um dashboard e erros de validação no formulário.
+- `widget_test.dart` — consentimento obrigatório, navegação até um dashboard, erros de validação no formulário e abertura de um limiar sem erro.
 
 ## 11. Telas
 
@@ -243,3 +243,6 @@ Os dados sintéticos vêm de `SimulatedTerritoryApi`, que representa o backend d
 | ![](docs/screenshots/05_alerta.png) | ![](docs/screenshots/06_decisao.png) | ![](docs/screenshots/07_formulario.png) | ![](docs/screenshots/08_dark_clima.png) |
 
 > As capturas foram geradas na versão web sem acesso ao INMET, por isso o aviso "Clima exibido com dados sintéticos". Com internet, o clima usa a estação do INMET.
+
+## 12. Video
+

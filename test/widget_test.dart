@@ -104,4 +104,29 @@ void main() {
     expect(find.textContaining('pelo menos 5'), findsOneWidget);
     expect(find.textContaining('Remova o telefone'), findsOneWidget);
   });
+
+  testWidgets('limiar expandido mostra os campos sem erro', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.5;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(await _app(prefs: _consent));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ajustes'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Limiares de alerta'));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Tempo médio de espera'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Tempo médio de espera'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Limiar de atenção *'), findsOneWidget);
+    expect(find.text('Limiar crítico *'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

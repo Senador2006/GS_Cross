@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
@@ -46,7 +47,13 @@ class RadarTerritorialApp extends StatelessWidget {
           create: (_) => TerritoryProvider(
             TerritoryRepository(
               territoryApi: api,
-              inmet: inmet ?? InmetScraperService(),
+              inmet:
+                  inmet ??
+                  InmetScraperService(
+                    localCsv: () => rootBundle.loadString(
+                      InmetScraperService.localAsset,
+                    ),
+                  ),
               ibge: ibge ?? IbgeApiService(),
               storage: storage,
             ),

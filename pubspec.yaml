@@ -64,6 +64,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  assets:
+    - "lib/data/2026/INMET_SE_SP_A701_SAO PAULO - MIRANTE_01-01-2026_A_31-10-2026.CSV"
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

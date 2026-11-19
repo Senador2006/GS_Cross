@@ -18,12 +18,23 @@ import 'api_exception.dart';
 /// ela lê o HTML de [pageUri], segue o link do arquivo do ano e, dentro do
 /// ZIP, busca só a estação automática mais próxima de Itaquera.
 class InmetScraperService {
-  InmetScraperService({http.Client? client, DateTime Function()? clock})
-    : _client = client ?? http.Client(),
-      _clock = clock ?? DateTime.now;
+  InmetScraperService({
+    http.Client? client,
+    DateTime Function()? clock,
+    Future<String?> Function()? localCsv,
+  }) : _client = client ?? http.Client(),
+       _clock = clock ?? DateTime.now,
+       _localCsv = localCsv;
 
   final http.Client _client;
   final DateTime Function() _clock;
+
+  /// CSV da estação A701 já extraído em `lib/data/2026`. Tem prioridade
+  /// sobre o download da página.
+  final Future<String?> Function()? _localCsv;
+
+  static const localAsset =
+      'lib/data/2026/INMET_SE_SP_A701_SAO PAULO - MIRANTE_01-01-2026_A_31-10-2026.CSV';
 
   static const pageUri = 'https://portal.inmet.gov.br/dadoshistoricos';
 
@@ -40,6 +51,9 @@ class InmetScraperService {
 
   Future<InmetClimate> fetchClimate() async {
     final today = _dateOnly(_clock());
+    final local = await _readLocal();
+    if (local != null) return _climateFrom(local, today, fromFile: true);
+
     final start = today.subtract(
       Duration(days: Territory.historyDays - 1),
     );
@@ -60,6 +74,26 @@ class InmetScraperService {
       daily.addAll(_parseHourlyCsv(csv));
     }
 
+    return _climateFrom(daily, today, fromFile: false);
+  }
+
+  Future<Map<DateTime, _Day>?> _readLocal() async {
+    final load = _localCsv;
+    if (load == null) return null;
+    try {
+      final csv = await load();
+      if (csv == null || csv.trim().isEmpty) return null;
+      return _parseHourlyCsv(csv);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  InmetClimate _climateFrom(
+    Map<DateTime, _Day> daily,
+    DateTime today, {
+    required bool fromFile,
+  }) {
     final series = _buildSeries(daily, today);
     final valid = series.first.points.where((p) => !p.isMissing).length;
     if (valid < 14) {
@@ -74,11 +108,12 @@ class InmetScraperService {
     }
 
     final until = last == null ? '' : ' O arquivo vai até ${_dmy(last)}.';
+    final source = fromFile ? 'Arquivo local do INMET.' : 'Página do INMET.';
     return InmetClimate(
       series: series,
       note:
           'Clima da estação $stationCode ($stationName), '
-          'a mais próxima de Itaquera.$until',
+          'a mais próxima de Itaquera. $source$until',
     );
   }
 
